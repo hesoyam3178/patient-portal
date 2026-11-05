@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/auth.tsx","./src/backdrop.tsx","./src/landing.tsx","./src/pages.tsx","./src/main.tsx","./src/screens.tsx","./src/lib/api.ts","./src/lib/brand.ts","./src/lib/demo.ts","./src/lib/emaillimit.ts","./src/lib/health.ts","./src/lib/password.ts","./src/lib/pin.ts","./src/lib/supabase.ts","./src/lib/types.ts"],"version":"5.9.3"}
