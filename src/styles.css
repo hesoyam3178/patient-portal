@@ -249,6 +249,7 @@ h1, h2, h3 { color: var(--heading); } .empty h3 { color: var(--heading); }
 .password-rules span, .rule-pass, .rule-error { font-size: 12px; line-height: 1.45; }
 .password-rules .rule-pass, .rule-pass { color: #32845a; }
 .password-rules .rule-pending { color: var(--muted, #778078); }
+.password-rules .password-rule-icon { display: inline-block; margin-right: 4px; vertical-align: -3px; }
 .rule-error { color: #c64c4c; }
 @media (max-width: 420px) { .otp-grid { gap: 6px; } .otp-digit { height: 52px; font-size: 1.15rem; } .password-rules { grid-template-columns: 1fr; } }
 

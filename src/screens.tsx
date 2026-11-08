@@ -194,7 +194,7 @@ export function Profile({ me, onSignOut, onUpdate }: { me: Patient; onSignOut: (
         <p className="muted" style={{ margin: 0 }}>Enter your current password to verify your identity.</p>
         {passwordField("current-password", "Current password", currentPassword, setCurrentPassword, showCurrent, () => setShowCurrent((v) => !v), "current-password", "Enter current password")}
         {passwordField("new-password", "New password", val, setVal, showNew, () => setShowNew((v) => !v), "new-password", "Create a strong new password")}
-        <div className="password-feedback"><div className="password-rules">{PASSWORD_RULES.map(({ label, test }) => <span key={label} className={test(val) ? "rule-pass" : "rule-pending"}><span aria-hidden="true">{test(val) ? "✓" : "○"}</span>{label}</span>)}</div></div>
+        <div className="password-feedback"><div className="password-rules">{PASSWORD_RULES.map(({ label, test }) => <span key={label} className={test(val) ? "rule-pass" : "rule-pending"}><CircleCheck className="password-rule-icon" size={15} strokeWidth={2} aria-hidden="true" />{label}</span>)}</div></div>
         {passwordField("confirm-new-password", "Confirm new password", confirmPassword, setConfirmPassword, showConfirm, () => setShowConfirm((v) => !v), "new-password", "Re-enter new password")}
         {confirmPassword && <p className={confirmPassword === val ? "rule-pass" : "rule-error"}>{confirmPassword === val ? "✓ Passwords match" : "Passwords do not match."}</p>}
       </>}

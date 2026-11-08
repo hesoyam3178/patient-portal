@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent, type C
 import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from "motion/react";
 import { Blobs, EASE, Ecg } from "./Backdrop";
 import { emailWaitSeconds } from "./lib/emailLimit";
-import { AlertCircle, Eye, EyeOff, Heart, Loader2, MailCheck } from "lucide-react";
+import { AlertCircle, CircleCheck, Eye, EyeOff, Heart, Loader2, MailCheck } from "lucide-react";
 import { api, isDemo } from "./lib/api";
 import { BRAND } from "./lib/brand";
 import { PASSWORD_RULES, isStrongPassword } from "./lib/password";
@@ -86,7 +86,7 @@ function OtpInput({ value, onChange }: { value: string; onChange: (value: string
 function PasswordRules({ password, confirm, showConfirm = true }: { password: string; confirm: string; showConfirm?: boolean }) {
   const touched = password.length > 0;
   return <div className="password-feedback" aria-live="polite">
-    <div className="password-rules">{PASSWORD_RULES.map((rule) => <span key={rule.label} className={rule.test(password) ? "rule-pass" : "rule-pending"}><span aria-hidden="true">{rule.test(password) ? "✓" : "○"}</span>{rule.label}</span>)}</div>
+    <div className="password-rules">{PASSWORD_RULES.map((rule) => <span key={rule.label} className={rule.test(password) ? "rule-pass" : "rule-pending"}><CircleCheck className="password-rule-icon" size={15} strokeWidth={2} aria-hidden="true" />{rule.label}</span>)}</div>
     {showConfirm && confirm.length > 0 && <p className={password === confirm ? "rule-pass" : "rule-error"}>{password === confirm ? "✓ Passwords match" : "Passwords do not match."}</p>}
     {touched && !isStrongPassword(password) && <p className="hint">Complete all password requirements before continuing.</p>}
   </div>;
