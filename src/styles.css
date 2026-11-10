@@ -133,8 +133,6 @@ a { color: inherit; text-decoration: none; } h1, h2, h3, p { margin: 0; } .num {
 @media (min-width: 900px) { .hero-l { grid-template-columns: 1.1fr .9fr; text-align: left; justify-items: stretch; gap: 64px; padding: 72px 0 88px; } .hero-l .lead { margin-left: 0; } .cta { justify-content: flex-start; } .peek { justify-self: end; } }
 .feats { display: grid; gap: 12px; } @media (min-width: 700px) { .feats { grid-template-columns: repeat(3, 1fr); } }
 .feat { padding: 22px; } .feat svg { color: var(--accent); margin-bottom: 12px; } .feat h3 { font-size: 17px; font-weight: 600; margin-bottom: 4px; } .feat p { color: var(--text-2); font-size: 15px; }
-.dl { display: flex; flex-direction: column; gap: 16px; align-items: flex-start; padding: 24px; margin-top: 12px; } .dl h2 { font-size: 22px; font-weight: 600; letter-spacing: -.025em; } .dl p { color: var(--text-2); }
-@media (min-width: 700px) { .dl { flex-direction: row; align-items: center; justify-content: space-between; } }
 .land-foot { text-align: center; color: var(--text-2); font-size: 13px; margin-top: 40px; }
 .edit { padding: 16px; margin-top: 12px; display: grid; gap: 12px; } .edit .actions { display: flex; gap: 10px; } .edit .actions .btn { flex: 1; }
 
@@ -151,9 +149,6 @@ body, .card, .side, .text-input { transition: background-color .25s var(--ease),
 html { background: var(--bg); } body { background: var(--page); background-repeat: no-repeat; background-color: var(--bg); }
 .card { box-shadow: var(--card-shadow); } .hero { background: var(--hero); } .peek { box-shadow: var(--shadow-md); }
 .btn { white-space: nowrap; }
-.dl > .btn { flex: none; }
-.dl > div { min-width: 0; flex: 1; }
-@media (min-width: 700px) { .dl { gap: 32px; } .dl p { max-width: 520px; } }
 
 
 /* Backdrop: drifting colour, dot texture */

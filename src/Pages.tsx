@@ -37,7 +37,6 @@ const FAQ: [string, ReactNode][] = [
   ["I forgot my password", <p>On the sign-in page, enter your email and tap “Forgot password?” We will send you a six-digit password reset code. If you signed up with Google, just use “Continue with Google”.</p>],
   ["How do I change my name or password?", <p>Open Profile, then choose “Edit name” or “Change password”.</p>],
   ["Who can see my results?", <p>Only you and authorised clinic staff. See the <a href="#/privacy">Privacy Policy</a> for details.</p>],
-  ["How do I install the Android app?", <p>On the home page, tap “Download APK” and open the file. Your phone may ask you to allow installs from your browser. You can also use the website without installing anything.</p>],
 ];
 
 const META = { terms: ["Terms and Conditions", `Last updated ${UPDATED}`], privacy: ["Privacy Policy", `Last updated ${UPDATED}`], help: ["Help", "Answers to common questions."] } as const;

@@ -1,11 +1,9 @@
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
-import { CircleCheck, Download, Heart, LineChart, ShieldCheck, Smartphone, Zap } from "lucide-react";
+import { CircleCheck, Heart, LineChart, ShieldCheck, Zap } from "lucide-react";
 import { BRAND } from "./lib/brand";
 import { Blobs, EASE, Ecg } from "./Backdrop";
 
-/** Put the built APK at public/downloads/crt-health-records.apk, or set VITE_APK_URL to a hosted link. */
-const APK_URL: string = import.meta.env.VITE_APK_URL || `${import.meta.env.BASE_URL}downloads/crt-health-records.apk`;
 const FEATURES = [
   { Icon: Zap, t: "Results at a glance", d: "Your latest temperature, blood pressure, oxygen level and pulse, right after your kiosk health check." },
   { Icon: LineChart, t: "See your history", d: "Every past check in one place, with simple charts that show how your numbers change." },
@@ -45,11 +43,6 @@ export function Landing() {
           </motion.div>
         </section>
         <section className="feats" aria-label="Features">{FEATURES.map(({ Icon, t, d }, i) => <Reveal key={t} i={i}><motion.div className="card feat" whileHover={{ y: -4 }} transition={{ duration: 0.25 }}><Icon size={26} aria-hidden="true" /><h3>{t}</h3><p>{d}</p></motion.div></Reveal>)}</section>
-        <Reveal><section className="card dl" aria-labelledby="dl-h">
-          <div style={{ display: "flex", gap: 16, alignItems: "center" }}><Smartphone size={36} color="var(--accent)" aria-hidden="true" style={{ flex: "none" }} />
-            <div><h2 id="dl-h">Get the Android app</h2><p>Download the APK to install it on your phone. You may need to allow installs from your browser. Prefer not to install? It works in your browser too.</p></div></div>
-          <motion.a className="btn btn-primary" href={APK_URL} download whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}><Download size={18} aria-hidden="true" />Download APK</motion.a>
-        </section></Reveal>
         <p className="land-foot"><a href="#/terms">Terms</a> · <a href="#/privacy">Privacy</a> · <a href="#/help">Help</a></p>
         <p className="land-foot" style={{ marginTop: 8 }}>For information only. Not a diagnosis. Talk to clinic staff about any concerns.</p>
       </div>

@@ -9,12 +9,11 @@ React + TypeScript + Supabase, same stack and design tokens as `cloud-portal`. M
 
 Privacy: the app only reads the `my_results` view, which filters by `auth.uid()` on the server and hides staff notes and review fields.
 
-## Accounts, Google sign-in and the APK
+## Accounts and Google sign-in
 - Sign up, sign in and forgot password use Supabase Auth. In Auth > Providers > Email, choose whether to require email confirmation; email confirmation must be enabled for the OTP signup flow.
 - Run `cloud/supabase/migration_004_patient_accounts.sql` so patients can edit their own name safely.
 - Google: enable it under Supabase > Auth > Providers > Google (paste your Google OAuth client ID and secret). Add your site URL to Auth > URL Configuration > Redirect URLs, and add the Supabase callback URL to your Google OAuth client.
 - New accounts see no results until staff link their Kiosk User ID (`update public.profiles set kiosk_user_id='...' where id='...'`).
-- APK: put the file at `public/downloads/crt-health-records.apk`, or set `VITE_APK_URL`.
 
 ## Loading skeletons
 Shown only on slow connections (loading over ~0.7s, or 2G/3G/data-saver). In demo mode, open the site with `?slow` (e.g. `/?slow#/signin`) to preview them.
@@ -41,4 +40,3 @@ The sign-up and password-recovery screens use Supabase email OTPs. Configure the
 - **Forgot password:** calls `auth.resetPasswordForEmail`, verifies the six-digit code with `type: "recovery"`, then calls `auth.updateUser({ password })` after the recovery session is established.
 - **Resend:** signup uses `auth.resend({ type: "signup", email })`; recovery sends a fresh reset email. Supabase rate limits still apply.
 - **Demo mode:** when Supabase environment variables are not configured, use `123456` as the OTP. This is only a local demo behavior and does not authenticate with Supabase.
-
