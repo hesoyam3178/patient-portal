@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ClipboardList, House, TrendingUp, CircleHelp, ShieldCheck, FileText, UserRound, Menu, X } from "lucide-react";
+import { Bell, ClipboardList, House, TrendingUp, CircleHelp, ShieldCheck, FileText, UserRound, Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { api, isDemo } from "./lib/api";
 import { BRAND } from "./lib/brand";
@@ -9,14 +9,17 @@ import { Landing } from "./Landing";
 import { Blobs } from "./Backdrop";
 import { Doc, INFO_ROUTES, type DocKind } from "./Pages";
 import { Dashboard, Detail, History, Profile, Results, Banner } from "./screens";
+import { Badge, MarkViewed, NoticeProvider, Notifications, unreadLabel, useNotices } from "./Notifications";
 
 const TABS = [{ to: "/", label: "Dashboard", Icon: House }, { to: "/results", label: "My Results", Icon: ClipboardList }, { to: "/history", label: "Health History", Icon: TrendingUp }];
-const MENU = [...TABS, { to: "/profile", label: "Profile", Icon: UserRound }];
+const NAV = [...TABS, { to: "/notifications", label: "Notifications", Icon: Bell }];
+const MENU = [...NAV, { to: "/profile", label: "Profile", Icon: UserRound }];
 const BrandLink = ({ label }: { label?: string }) => <a className="brand" href="#/" aria-label={label}><img className="seal" src={BRAND.logo} alt="" /><span className="wordmark">KioskVitalCare</span></a>;
 
 /** Phone-only top bar with a dropdown menu. Closes on navigation, Escape, outside tap and when resized to desktop. */
 function TopBar({ path, tab }: { path: string; tab: string }) {
   const [open, setOpen] = useState(false);
+  const { unread } = useNotices();
   useEffect(() => { setOpen(false); }, [path]);
   useEffect(() => {
     if (!open) return;
@@ -29,13 +32,16 @@ function TopBar({ path, tab }: { path: string; tab: string }) {
     <>
       <header className="topbar">
         <BrandLink label="KioskVitalCare home" />
-        <button type="button" className="menu-btn" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((o) => !o)}>{open ? <X size={26} aria-hidden="true" /> : <Menu size={26} aria-hidden="true" />}</button>
+        <div className="tb-actions">
+          <a className="menu-btn bell-btn" href="#/notifications" aria-label={unreadLabel(unread)} aria-current={tab === "/notifications" ? "page" : undefined}><Bell size={24} aria-hidden="true" /><Badge n={unread} /></a>
+          <button type="button" className="menu-btn" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((o) => !o)}>{open ? <X size={26} aria-hidden="true" /> : <Menu size={26} aria-hidden="true" />}</button>
+        </div>
         <AnimatePresence>
           {open && (
             <motion.nav key="dd" id="mobile-menu" className="dropdown" aria-label="Main navigation" style={{ transformOrigin: "top right" }}
               initial={{ opacity: 0, y: -8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.97 }} transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}>
               {MENU.map(({ to, label, Icon }) => (
-                <a key={to} href={`#${to}`} className="dd-item" aria-current={tab === to ? "page" : undefined}><Icon size={21} strokeWidth={tab === to ? 2.2 : 1.8} aria-hidden="true" />{label}</a>
+                <a key={to} href={`#${to}`} className="dd-item" aria-current={tab === to ? "page" : undefined}><Icon size={21} strokeWidth={tab === to ? 2.2 : 1.8} aria-hidden="true" />{label}{to === "/notifications" && <Badge n={unread} />}</a>
               ))}
             </motion.nav>
           )}
@@ -48,12 +54,13 @@ function TopBar({ path, tab }: { path: string; tab: string }) {
 
 /** Desktop-only sidebar. */
 function Sidebar({ me, tab }: { me: Patient; tab: string }) {
+  const { unread } = useNotices();
   return (
     <aside className="side" aria-label="Sidebar navigation">
       <BrandLink label="KioskVitalCare home" />
       <nav className="side-main-nav" aria-label="Main navigation">
-        {TABS.map(({ to, label, Icon }) => (
-          <a key={to} href={`#${to}`} className="tab sd" aria-current={tab === to ? "page" : undefined}><Icon size={22} strokeWidth={tab === to ? 2.2 : 1.8} aria-hidden="true" />{label}</a>
+        {NAV.map(({ to, label, Icon }) => (
+          <a key={to} href={`#${to}`} className="tab sd" aria-current={tab === to ? "page" : undefined} aria-label={to === "/notifications" ? unreadLabel(unread) : undefined}><Icon size={22} strokeWidth={tab === to ? 2.2 : 1.8} aria-hidden="true" />{label}{to === "/notifications" && <Badge n={unread} />}</a>
         ))}
       </nav>
       <div className="side-bottom">
@@ -106,7 +113,8 @@ export default function App() {
   const noBar = isInfo || section === "/profile";
 
   return (
-    <>
+    <NoticeProvider patientId={me.id}>
+      <MarkViewed resultId={id} />
       <div className="app-bg" aria-hidden="true"><Blobs /><div className="dots" /></div>
       {!noBar && <TopBar path={path} tab={tab} />}
       <Sidebar me={me} tab={tab} />
@@ -116,9 +124,10 @@ export default function App() {
         {section === "/" && <Dashboard me={me} rows={rows} />}
         {section === "/results" && (id ? <Detail row={rows?.find((r) => r.id === id)} loading={rows === null} /> : <Results rows={rows} />)}
         {section === "/history" && <History rows={rows} />}
+        {section === "/notifications" && <Notifications rows={rows} />}
         {isInfo && <Doc kind={section.slice(1) as DocKind} back={{ to: "/profile", label: "Profile" }} hideBackOnDesktop />}
         {section === "/profile" && <Profile me={me} onSignOut={signOut} onUpdate={setMe} />}
       </div></main>
-    </>
+    </NoticeProvider>
   );
 }

@@ -7,6 +7,7 @@ import { FLAG_SUMMARY, FLAG_TONE, M, TONE_LABEL, TREND, fmtDate, fmtTime, greeti
 import { PASSWORD_RULES, isStrongPassword } from "./lib/password";
 import { PIN_LENGTH, pinProblem } from "./lib/pin";
 import type { Patient, Result } from "./lib/types";
+import { NewReviewBanner, ReviewCard, useNotices } from "./Notifications";
 
 const rise = (i = 0) => ({ initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay: Math.min(i, 8) * 0.06, ease: EASE } });
 const go = (to: string) => { window.location.hash = to; };
@@ -35,8 +36,9 @@ function DashSkel() {
 const Empty = ({ children }: { children?: ReactNode }) => <div className="card empty"><ClipboardList size={36} strokeWidth={1.5} aria-hidden="true" /><h3>No health checks yet</h3><p>Your results will appear here after you complete a health check at a kiosk using your account.</p>{children}</div>;
 
 function RecordRow({ r, i = 0 }: { r: Result; i?: number }) {
+  const { byResult } = useNotices(); const notice = byResult.get(r.id);
   return <motion.li {...rise(i)}><button className="row" onClick={() => go(`/results/${r.id}`)}>
-    <div className="body"><div className="t">{fmtDate(r.recorded_at)}</div><div className="d">Health check · {fmtTime(r.recorded_at)}</div><div className="d" style={{ marginBottom: 4 }}>{summaryLine(r)}</div><Status tone={FLAG_TONE[r.flag]} /></div>
+    <div className="body"><div className="t">{fmtDate(r.recorded_at)}</div><div className="d">Health check · {fmtTime(r.recorded_at)}</div><div className="d" style={{ marginBottom: 4 }}>{summaryLine(r)}</div><Status tone={FLAG_TONE[r.flag]} />{notice && <span className={notice.read_at ? "rv-tag" : "rv-tag new"}>{notice.read_at ? "Reviewed" : "New review"}</span>}</div>
     <ChevronRight size={20} className="chev" aria-hidden="true" /></button></motion.li>;
 }
 
@@ -46,6 +48,7 @@ export function Dashboard({ me, rows }: { me: Patient; rows: Result[] | null }) 
   const latest = rows[0];
   return <>
     <Head title={first} eyebrow={greeting()} />
+    <NewReviewBanner rows={rows} />
     {!latest ? <Empty /> : <>
       <motion.section className="card hero" aria-label="Latest health check" {...rise(0)}>
         <p className="label">Latest health check</p><h2>{fmtDate(latest.recorded_at, true)}</h2>
@@ -74,6 +77,7 @@ export function Results({ rows }: { rows: Result[] | null }) {
 }
 
 export function Detail({ row, loading }: { row?: Result; loading: boolean }) {
+  const { byResult } = useNotices();
   const back = <a className="back" href="#/results"><ChevronLeft size={20} aria-hidden="true" />My Results</a>;
   if (loading) return <>{back}<Skel h={90} /><Skel h={220} /></>;
   if (!row) return <>{back}<div className="card empty"><h3>We couldn’t find that result</h3><p>It may have been removed, or it belongs to another account.</p></div></>;
@@ -84,6 +88,7 @@ export function Detail({ row, loading }: { row?: Result; loading: boolean }) {
     {back}
     <Head title={fmtDate(row.recorded_at, true)} sub={`Health check · ${fmtTime(row.recorded_at)}`} />
     <Note tone={FLAG_TONE[row.flag]}>{FLAG_SUMMARY[row.flag]}</Note>
+    <ReviewCard notice={byResult.get(row.id)} />
     {group("Vital signs", [M.temp, M.bp, M.spo2, M.pulse])}
     {group("Body measurements", [M.height, M.weight, M.bmi])}
     <p className="fine">“Usual range” uses the same limits as the health kiosk. This is general information, not a diagnosis. BMI limits apply to adults.</p>

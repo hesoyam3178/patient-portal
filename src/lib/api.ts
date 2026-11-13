@@ -1,11 +1,12 @@
 import { isConfigured, supabase } from "./supabase";
-import { demoPatient, demoResults } from "./demo";
+import { demoNotices, demoPatient, demoResults } from "./demo";
 import { claimEmailSlot } from "./emailLimit";
-import type { Patient, Result } from "./types";
+import type { Notice, Patient, Result } from "./types";
 
 export const isDemo = !isConfigured;
 /** Demo latency. Add ?slow to the URL (e.g. /?slow#/signin) to simulate a slow connection and preview the loading skeletons. */
 let demoPinSetAt: string | null = null;
+let demoNoticeStore: Notice[] | null = null;
 const wait = (ms = 450) => new Promise((r) => setTimeout(r, new URLSearchParams(window.location.search).has("slow") ? 3000 : ms));
 
 async function loadPatient(): Promise<Patient | null> {
@@ -110,6 +111,27 @@ export const api = {
     const { data, error } = await supabase!.from("my_results").select("*").order("recorded_at", { ascending: false }).limit(500);
     if (error) throw new Error("We couldn’t load your results. Please try again.");
     return data as Result[];
+  },
+  /** Reviews staff have sent to this patient, newest first. RLS only returns the signed-in patient's own rows. */
+  async myNotices(): Promise<Notice[]> {
+    if (isDemo) { await wait(200); return [...(demoNoticeStore ??= demoNotices())].sort((a, b) => b.reviewed_at.localeCompare(a.reviewed_at)); }
+    const { data, error } = await supabase!.from("patient_notifications").select("id, result_id, staff_note, reviewed_at, created_at, read_at").order("reviewed_at", { ascending: false }).limit(200);
+    if (error) throw new Error("We couldn’t load your notifications.");
+    return data as Notice[];
+  },
+  /** Marks the given notifications as read. Patients can only ever change `read_at` on their own rows (column grant + RLS). */
+  async markNoticesRead(ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    const now = new Date().toISOString();
+    if (isDemo) { demoNoticeStore = (demoNoticeStore ??= demoNotices()).map((n) => (ids.includes(n.id) && !n.read_at ? { ...n, read_at: now } : n)); return; }
+    const { error } = await supabase!.from("patient_notifications").update({ read_at: now }).in("id", ids).is("read_at", null);
+    if (error) throw new Error("We couldn’t update your notifications.");
+  },
+  /** Calls `onChange` when a review arrives or changes (Realtime). Returns an unsubscribe function. Demo mode never changes. */
+  watchNotices(patientId: string, onChange: () => void): () => void {
+    if (isDemo) return () => {};
+    const channel = supabase!.channel(`notices-${patientId}`).on("postgres_changes", { event: "*", schema: "public", table: "patient_notifications", filter: `patient_id=eq.${patientId}` }, onChange).subscribe();
+    return () => void supabase!.removeChannel(channel);
   },
   async resetPassword(email: string) {
     claimEmailSlot();
