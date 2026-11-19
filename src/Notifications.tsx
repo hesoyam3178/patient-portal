@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Bell, ChevronRight, CircleAlert, CircleCheck, ClipboardCheck, Minus, TriangleAlert } from "lucide-react";
+import { Bell, ChevronRight, ClipboardCheck, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { api } from "./lib/api";
-import { FLAG_TONE, TONE_LABEL, fmtDate, fmtTime, summaryLine, type Tone } from "./lib/health";
-import type { Notice, Result } from "./lib/types";
+import { fmtDate, fmtTime } from "./lib/health";
+import type { Notice } from "./lib/types";
 
 /* ---------- state ---------- */
 
@@ -57,9 +58,6 @@ export function MarkViewed({ resultId }: { resultId: string | null }) {
 
 /* ---------- small pieces ---------- */
 
-const go = (to: string) => { window.location.hash = to; };
-const TONE_ICON = { ok: CircleCheck, warn: CircleAlert, bad: TriangleAlert, none: Minus };
-const Tag = ({ tone }: { tone: Tone }) => { const I = TONE_ICON[tone]; return <span className={`st ${tone}`}><I size={15} aria-hidden="true" />{TONE_LABEL[tone]}</span>; };
 const when = (iso: string) => `${fmtDate(iso)} · ${fmtTime(iso)}`;
 
 /** Unread count shown on the bell and the Notifications menu items. */
@@ -77,62 +75,43 @@ export function ReviewCard({ notice }: { notice?: Notice }) {
   );
 }
 
-/** Dashboard banner for reviews the patient hasn't opened yet. */
-export function NewReviewBanner({ rows }: { rows: Result[] }) {
-  const { notices } = useNotices();
-  const fresh = notices.filter((n) => !n.read_at);
-  if (!fresh.length) return null;
-  const one = fresh.length === 1 ? fresh[0] : null;
-  const r = one ? rows.find((x) => x.id === one.result_id) : undefined;
-  return (
-    <button type="button" className="review-banner" onClick={() => go(one ? `/results/${one.result_id}` : "/notifications")}>
-      <span className="rb-icon"><Bell size={20} aria-hidden="true" /></span>
-      <span className="rb-body">
-        <strong>{one ? "Clinic staff reviewed your health check" : `${fresh.length} new reviews from clinic staff`}</strong>
-        <small>{one ? `${fmtDate(r ? r.recorded_at : one.reviewed_at)}${one.staff_note ? " · includes a note" : ""}` : "Tap to see them"}</small>
-      </span>
-      <ChevronRight size={20} className="chev" aria-hidden="true" />
-    </button>
-  );
-}
+/* ---------- dropdown ---------- */
 
-/* ---------- page ---------- */
-
-export function Notifications({ rows }: { rows: Result[] | null }) {
+export function NoticeDropdown({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { loading, notices, unread, markRead } = useNotices();
-  const byId = useMemo(() => new Map((rows ?? []).map((r) => [r.id, r])), [rows]);
-  return <>
-    <header className="notice-page-head">
-      <div>
-        <p className="notice-kicker">UPDATES</p>
-        <h1>Notifications</h1>
-        <p>Updates from clinic staff about your health checks.</p>
-      </div>
-      {!loading && notices.length > 0 && <span className={`notice-count${unread ? " has-unread" : ""}`}>{unread ? `${unread} unread` : "All caught up"}</span>}
-    </header>
-    {loading ? <div className="skeleton" style={{ height: 150 }} role="status" aria-label="Loading notifications" />
-      : !notices.length ? <div className="card empty"><Bell size={36} strokeWidth={1.5} aria-hidden="true" /><h3>No notifications yet</h3><p>When clinic staff review one of your health checks, you’ll see it here together with their note.</p></div>
-      : <>
-        {unread > 0 && <div className="notice-tools"><span className="label" aria-live="polite">Your latest updates</span><button type="button" className="notice-mark-all" onClick={() => markRead(notices.filter((n) => !n.read_at).map((n) => n.id))}><CircleCheck size={16} aria-hidden="true" />Mark all as read</button></div>}
-        <ul className="notice-list">
-          {notices.map((n) => {
-            const r = byId.get(n.result_id), isNew = !n.read_at;
-            return <li key={n.id}><article className={isNew ? "card notice unread" : "card notice"}>
-              <header className="notice-h">
-                <span className="notice-icon" aria-hidden="true"><ClipboardCheck size={19} /></span>
-                <div className="notice-title"><h3>Your health check was reviewed</h3><p className="label">{when(n.reviewed_at)}{isNew && <span className="sr-only"> (unread)</span>}</p></div>
-                <span className={`notice-state${isNew ? " is-new" : ""}`}>{isNew ? "New" : "Read"}</span>
-              </header>
-              {r && <div className="notice-result"><p className="notice-result-label">Health check</p><div className="t">{fmtDate(r.recorded_at)} · {fmtTime(r.recorded_at)}</div><div className="d">{summaryLine(r)}</div><Tag tone={FLAG_TONE[r.flag]} /></div>}
-              {n.staff_note ? <div className="notice-note"><p className="label">Note from clinic staff</p><p className="review-note">{n.staff_note}</p></div> : <p className="notice-no-note">Reviewed by clinic staff. No note was added.</p>}
-              <div className="notice-actions">
-                <button type="button" className="notice-view" onClick={() => go(`/results/${n.result_id}`)}>View full results<ChevronRight size={17} aria-hidden="true" /></button>
-                {isNew && <button type="button" className="notice-mark-read" onClick={() => markRead([n.id])}>Mark as read</button>}
-              </div>
-            </article></li>;
+  if (!open) return null;
+  return <div className="notice-layer">
+    <button type="button" className="notice-dismiss" aria-label="Close notifications" onClick={onClose} />
+    <section id="notification-dropdown" className="notice-popover" role="dialog" aria-modal="false" aria-label="Notifications">
+      <header className="notice-popover-head">
+        <h2>Notifications</h2>
+        <div className="notice-popover-actions">
+          {unread > 0 && <button type="button" className="notice-mark-all" onClick={() => markRead(notices.filter((n) => !n.read_at).map((n) => n.id))}>Mark all as read</button>}
+          <button type="button" className="notice-close" aria-label="Close notifications" onClick={onClose}><X size={19} aria-hidden="true" /></button>
+        </div>
+      </header>
+      {loading ? <div className="skeleton notice-loading" role="status" aria-label="Loading notifications" />
+        : !notices.length ? <div className="notice-empty"><Bell size={30} strokeWidth={1.5} aria-hidden="true" /><p>No notifications yet</p></div>
+        : <ul className="notice-list">
+          <AnimatePresence initial={false} mode="popLayout">
+          {notices.map((notice) => {
+            const isNew = !notice.read_at;
+            return <motion.li key={notice.id} layout="position" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+              <article className={`notice-item${isNew ? " unread" : ""}`}>
+                <div className="notice-item-copy">
+                  <span className="notice-icon" aria-hidden="true"><ClipboardCheck size={18} /></span>
+                  <div className="notice-title">
+                    <p>Your health check was reviewed by the clinic staff.</p>
+                    <time className="notice-time" dateTime={notice.reviewed_at}>{when(notice.reviewed_at)}{isNew && <span className="sr-only"> (unread)</span>}</time>
+                  </div>
+                  {isNew && <span className="notice-unread-dot" aria-label="Unread" />}
+                </div>
+                <a className="notice-view" href={`#/results/${notice.result_id}`} onClick={() => { markRead([notice.id]); onClose(); }}>View Full Results<ChevronRight size={17} aria-hidden="true" /></a>
+              </article>
+            </motion.li>;
           })}
-        </ul>
-      </>}
-    <p className="fine">For information only. This isn’t a diagnosis. Talk to clinic staff about any concerns.</p>
-  </>;
+          </AnimatePresence>
+        </ul>}
+    </section>
+  </div>;
 }

@@ -1,20 +1,19 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { AlertCircle, ChevronLeft, ChevronRight, CircleAlert, CircleCheck, ClipboardList, LogOut, Minus, TriangleAlert, KeyRound, Pencil, CircleHelp, ShieldCheck, FileText, Eye, EyeOff, Hash } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight, CircleCheck, ClipboardList, LogOut, KeyRound, Pencil, CircleHelp, ShieldCheck, FileText, Eye, EyeOff, Hash } from "lucide-react";
 import { motion } from "motion/react";
 import { api } from "./lib/api";
 import { EASE } from "./Backdrop";
-import { FLAG_SUMMARY, FLAG_TONE, M, TONE_LABEL, TREND, fmtDate, fmtTime, greeting, summaryLine, withUnit, type Metric, type Tone } from "./lib/health";
+import { FLAG_SUMMARY, FLAG_TONE, M, TREND, fmtDate, fmtTime, greeting, summaryLine, withUnit, type Metric, type Tone } from "./lib/health";
 import { PASSWORD_RULES, isStrongPassword } from "./lib/password";
 import { PIN_LENGTH, pinProblem } from "./lib/pin";
 import type { Patient, Result } from "./lib/types";
-import { NewReviewBanner, ReviewCard, useNotices } from "./Notifications";
+import { ReviewCard, useNotices } from "./Notifications";
+import { StatusTag, TONE_ICON } from "./Status";
 
 const rise = (i = 0) => ({ initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5, delay: Math.min(i, 8) * 0.06, ease: EASE } });
 const go = (to: string) => { window.location.hash = to; };
-const ICON = { ok: CircleCheck, warn: CircleAlert, bad: TriangleAlert, none: Minus };
 export const Banner = ({ children }: { children: ReactNode }) => <div className="banner" role="note"><AlertCircle size={18} aria-hidden="true" /><span>{children}</span></div>;
-const Status = ({ tone, text }: { tone: Tone; text?: string }) => { const I = ICON[tone]; return <span className={`st ${tone}`}><I size={15} aria-hidden="true" />{text ?? TONE_LABEL[tone]}</span>; };
-const Note = ({ tone, children }: { tone: Tone; children: ReactNode }) => { const I = ICON[tone]; return <p className={`note ${tone}`}><I size={18} aria-hidden="true" /><span>{children}</span></p>; };
+const Note = ({ tone, children }: { tone: Tone; children: ReactNode }) => { const I = TONE_ICON[tone]; return <p className={`note ${tone}`}><I size={18} aria-hidden="true" /><span>{children}</span></p>; };
 const Head = ({ title, sub, eyebrow }: { title: string; sub?: string; eyebrow?: string }) => <div className="head">{eyebrow && <p className="eyebrow">{eyebrow}</p>}<h1>{title}</h1>{sub && <p>{sub}</p>}</div>;
 /** True on a slow link (2G/3G or data-saver) right away, otherwise only once loading has taken longer than `ms`. Fast loads never flash a skeleton. */
 function useSlowGate(ms = 700) {
@@ -38,7 +37,7 @@ const Empty = ({ children }: { children?: ReactNode }) => <div className="card e
 function RecordRow({ r, i = 0 }: { r: Result; i?: number }) {
   const { byResult } = useNotices(); const notice = byResult.get(r.id);
   return <motion.li {...rise(i)}><button className="row" onClick={() => go(`/results/${r.id}`)}>
-    <div className="body"><div className="t">{fmtDate(r.recorded_at)}</div><div className="d">Health check · {fmtTime(r.recorded_at)}</div><div className="d" style={{ marginBottom: 4 }}>{summaryLine(r)}</div><Status tone={FLAG_TONE[r.flag]} />{notice && <span className={notice.read_at ? "rv-tag" : "rv-tag new"}>{notice.read_at ? "Reviewed" : "New review"}</span>}</div>
+    <div className="body"><div className="t">{fmtDate(r.recorded_at)}</div><div className="d">Health check · {fmtTime(r.recorded_at)}</div><div className="d" style={{ marginBottom: 4 }}>{summaryLine(r)}</div><StatusTag tone={FLAG_TONE[r.flag]} />{notice && <span className={notice.read_at ? "rv-tag" : "rv-tag new"}>{notice.read_at ? "Reviewed" : "New review"}</span>}</div>
     <ChevronRight size={20} className="chev" aria-hidden="true" /></button></motion.li>;
 }
 
@@ -48,12 +47,11 @@ export function Dashboard({ me, rows }: { me: Patient; rows: Result[] | null }) 
   const latest = rows[0];
   return <>
     <Head title={first} eyebrow={greeting()} />
-    <NewReviewBanner rows={rows} />
     {!latest ? <Empty /> : <>
       <motion.section className="card hero" aria-label="Latest health check" {...rise(0)}>
         <p className="label">Latest health check</p><h2>{fmtDate(latest.recorded_at, true)}</h2>
         <Note tone={FLAG_TONE[latest.flag]}>{FLAG_SUMMARY[latest.flag]}</Note>
-        <div className="tiles">{[M.temp, M.bp, M.spo2, M.pulse].map((m) => <div className="tile" key={m.key}><p className="label">{m.label}</p><p className="v num">{m.text(latest)}{m.val(latest) != null && <small>{m.unit}</small>}</p><div className="s"><Status tone={m.tone(latest)} /></div></div>)}</div>
+        <div className="tiles">{[M.temp, M.bp, M.spo2, M.pulse].map((m) => <div className="tile" key={m.key}><p className="label">{m.label}</p><p className="v num">{m.text(latest)}{m.val(latest) != null && <small>{m.unit}</small>}</p><div className="s"><StatusTag tone={m.tone(latest)} /></div></div>)}</div>
         <button className="btn btn-primary btn-block" onClick={() => go(`/results/${latest.id}`)}>View full results</button>
       </motion.section>
       {rows.length > 1 && <>
@@ -83,7 +81,7 @@ export function Detail({ row, loading }: { row?: Result; loading: boolean }) {
   if (!row) return <>{back}<div className="card empty"><h3>We couldn’t find that result</h3><p>It may have been removed, or it belongs to another account.</p></div></>;
   const group = (title: string, ms: Metric[]) => <><p className="group-t">{title}</p><div className="card list">{ms.map((m) => <div key={m.key} className="kv" style={{ borderTop: "1px solid var(--line)" }}>
     <div className="k"><div>{m.label}</div>{m.usual && m.val(row) != null && <div className="label">Usual: {m.usual}</div>}</div>
-    <div className="val"><div className="num">{m.val(row) == null ? "—" : <>{m.text(row)}{m.unit && <small> {m.unit}</small>}</>}</div>{m.val(row) == null ? <Status tone="none" text="Not measured" /> : m.tone(row) !== "none" && <Status tone={m.tone(row)} />}</div></div>)}</div></>;
+    <div className="val"><div className="num">{m.val(row) == null ? "—" : <>{m.text(row)}{m.unit && <small> {m.unit}</small>}</>}</div>{m.val(row) == null ? <StatusTag tone="none" text="Not measured" /> : m.tone(row) !== "none" && <StatusTag tone={m.tone(row)} />}</div></div>)}</div></>;
   return <>
     {back}
     <Head title={fmtDate(row.recorded_at, true)} sub={`Health check · ${fmtTime(row.recorded_at)}`} />
